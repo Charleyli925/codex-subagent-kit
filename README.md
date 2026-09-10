@@ -3,29 +3,116 @@
 [![CI](https://github.com/Charleyli925/codex-subagent-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Charleyli925/codex-subagent-kit/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-A portable, project-scoped subagent workflow for Codex: narrow roles, explicit
-routing, bounded parallelism, progressive disclosure, and evidence-based result
-acceptance.
-
-This repository turns a working multi-agent setup into a reusable kit without
-copying product-specific delivery rules into every project.
+A practical operating system for Codex subagents: keep Codex's native
+multi-agent runtime, then add predictable delegation, model routing, review,
+testing, and result acceptance for real development work.
 
 > Independent community project. It is not an official OpenAI repository.
 
 [中文说明](README.zh-CN.md)
 
-## What it includes
+## Start with the user experience
 
-- Codex's built-in `explorer` and `worker` roles.
-- Model-neutral custom `reviewer` and `tester` roles.
-- A portable preset that inherits the root agent's model and reasoning effort.
-- An optional Sol/Astra routing preset.
-- A minimal preset for teams that prefer explicit delegation.
-- Task-packet, lifecycle, dependency-wave, and result-acceptance contracts.
-- A non-destructive installer and a local diagnostic command.
+You choose the root model and reasoning effort as usual. The kit does not change
+that choice. During a substantial task, the root can hand bounded work to a small
+team, continue useful non-overlapping work, then verify and combine the results.
 
-The kit keeps role and model selection separate. A role says what an agent does;
-a preset says which model and reasoning effort it should use.
+```text
+Your selected root agent — unchanged
+├── explorer  — built into Codex; traces code and evidence
+├── worker    — built into Codex; implements one bounded change
+├── reviewer  — added by this kit; reviews from a clean, read-only context
+└── tester    — added by this kit; runs existing tests against frozen source
+
+Codex runs the threads. The kit supplies the operating policy.
+```
+
+That is why the repository defines only two custom agent TOML files even though
+the working team has four roles: `explorer` and `worker` already ship with Codex,
+while this kit adds only the missing `reviewer` and `tester` specializations.
+
+For example, a feature task can send codebase discovery to `explorer`, keep the
+critical implementation on the root, run a long deterministic suite through
+`tester`, and ask `reviewer` to inspect the final diff with a fresh context. The
+root remains responsible for authorization and decides whether the evidence is
+good enough to finish.
+
+## It uses Codex's native multi-agent runtime
+
+This project does not reimplement subagents, ship a scheduler, or replace Codex's
+orchestration. It deliberately joins the native runtime at its extension points.
+
+| Codex already provides | This kit adds |
+| --- | --- |
+| Built-in `default`, `explorer`, and `worker` roles | Model-neutral `reviewer` and `tester` roles |
+| Agent-thread creation and parallel execution | Rules for deciding when delegation is worthwhile |
+| Follow-up instructions, waiting, stopping, and thread lifecycle | Dependency waves, one-writer ownership, and bounded concurrency |
+| Parent model/effort inheritance and explicit spawn overrides | Portable inheritance and optional Sol/Astra routing policies |
+| Parent permissions plus per-agent sandbox overrides | Read-only review and frozen-source test contracts |
+| Thread activity and consolidated results | Task packets, route evidence, and root-side result acceptance |
+
+The public Codex documentation describes these current subagent capabilities and
+the built-in roles. Some local session records may label the runtime
+`multi_agent_version: "v2"`; this repository uses that native runtime when the
+client provides it, but **does not create a second V2 system and does not require
+the undocumented `[features].multi_agent_v2` switch**. Its compatibility contract
+is the documented `[agents]` and `.codex/agents/` surface.
+
+## The opinionated choices in `sol-astra`
+
+The optional `sol-astra` preset encodes choices rather than pretending they are
+Codex defaults:
+
+1. **Ultra passes through.** Sol Ultra and Astra Ultra keep Codex-native
+   delegation, model selection, and runtime thread selection. The kit does not
+   force its non-Ultra role routing or three-child policy onto Ultra.
+2. **Every non-Ultra Sol/Astra effort uses the child routing policy.** Low,
+   Medium, High, XHigh, and Max keep the user's chosen root model and effort, but
+   delegated children may use a different model.
+3. **Narrow work goes to a fast agent at high effort.** `explorer`, `worker`, and
+   `tester` use Luna Max for bounded exploration, implementation, and test work.
+4. **Review does not deliberately become weaker than the root.** `reviewer` uses
+   the same model family as the root, has a High floor, and follows the root up to
+   XHigh or Max. Its independent context and review instructions provide the
+   second opinion.
+5. **Unknown models stay portable.** If the root is neither Sol nor Astra,
+   children inherit it. If an explicit route is unavailable, the policy records
+   the failure and allows one inherited fallback.
+
+These defaults are all editable. They are a worked example of separating a
+role's responsibility from the model used to perform it.
+
+## What we learned from native/Ultra behavior
+
+The policy adopts the useful visible principles of the native workflow without
+depending on hidden Ultra configuration:
+
+- delegate independent work when it materially improves speed or quality;
+- move noisy exploration, logs, and test output out of the root context;
+- give each child a narrow goal and clean context;
+- let the root continue instead of waiting when results are not yet dependencies;
+- steer or stop work that becomes stale, duplicated, or out of scope;
+- return distilled evidence, then let the root verify it.
+
+The kit adds deterministic safeguards that a runtime cannot infer for every
+repository: source identity, file ownership, dependency state, required reading,
+stop conditions, model-route evidence, and explicit result acceptance.
+
+## When will it delegate?
+
+The `portable` and `sol-astra` presets let the root delegate proactively when a
+task is concrete, bounded, independent, and likely to benefit from parallel work.
+The `minimal` preset delegates only after a direct request or when a substantial
+task has clearly independent lanes.
+
+Good candidates include codebase exploration, long existing test suites, log
+analysis, issue triage, independent review, and summarization. Short edits,
+irreversible actions, critical-path decisions, and work that needs continuous
+shared judgment stay on the root.
+
+Before the first substantial spawn, the root loads the detailed orchestration
+contract on demand. This is progressive disclosure: every task sees the short
+policy, but only actual multi-agent work pays the context cost of the full rules.
 
 ## Requirements
 
@@ -63,6 +150,8 @@ project-scoped agents when the session starts.
 
 The portable preset is the default because model availability varies by account,
 client, and time. The Sol/Astra preset is optional and documents its fallback.
+To adopt the complete opinionated policy described above, replace `portable`
+with `sol-astra` in both install commands.
 
 ## Roles
 
@@ -120,9 +209,50 @@ The optional preset uses this policy below Ultra:
 The custom role files intentionally do not pin models. Dynamic reviewer
 alignment is a parent-agent routing decision made at spawn time.
 
+Only the `sol-astra` preset applies this table. It changes child routing for all
+non-Ultra Sol/Astra reasoning levels; it does not change the model or effort you
+selected for the root agent.
+
+## Make the policy yours
+
+The presets are starting points, not hidden defaults. The installed files are
+plain TOML and Markdown that belong to the consuming project.
+
+| Choice | Shipped value | Where to change it |
+| --- | --- | --- |
+| Proactive vs. explicit delegation | Preset-dependent | Installed `AGENTS.md` policy |
+| Maximum open children | `portable`: 3; `minimal`: 2; `sol-astra`: 3 below Ultra and native in Ultra | Preset config and installed `AGENTS.md` |
+| Child models and efforts | Inherit, or the Sol/Astra table | Installed `AGENTS.md` routing section |
+| Reviewer minimum effort | High in `sol-astra` | Reviewer alignment table |
+| Ultra behavior | Native pass-through | Ultra routing rule |
+| Writable concurrency | One writer | `.codex/subagent-kit/orchestration.md` |
+| Whether children may spawn | No | Root policy and custom-agent instructions |
+| Missing-model fallback | One inherited retry | Routing and orchestration rules |
+| Project documents children must read | Task-specific | Each task packet's `required_reading` |
+| Role behavior and sandbox intent | Reviewer/tester defaults | `.codex/agents/*.toml` |
+
+You can also add your own role. Create `.codex/agents/security-reviewer.toml`,
+give it the required fields, then add when-to-use and routing rules to your
+project's `AGENTS.md`:
+
+```toml
+name = "security_reviewer"
+description = "Review a bounded diff for concrete security regressions."
+sandbox_mode = "read-only"
+developer_instructions = """
+Review only the supplied diff and threat boundary. Do not edit files or spawn
+other agents. Return findings with file evidence and residual limits.
+"""
+```
+
+Keep the new role narrow. Decide separately whether it inherits the root model,
+uses a project default, or receives an explicit model and reasoning effort at
+spawn time. Then include it in the same task-packet and result-acceptance loop as
+the bundled roles.
+
 ## Safety properties
 
-- At most three open child threads by default.
+- At most three open child threads in the configured non-Ultra policies; the Sol/Astra Ultra path keeps native thread selection.
 - Only one agent writes a checkout at a time, including test artifacts.
 - Read-only tasks may run in parallel against frozen source.
 - Leaf agents do not spawn more agents.

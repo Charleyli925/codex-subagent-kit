@@ -34,6 +34,34 @@ if grep -R -n 'multi_agent_v2' "$repo_dir/core" "$repo_dir/presets"; then
   fail 'core or preset depends on multi_agent_v2'
 fi
 
+printf 'Checking user-facing documentation contracts...\n'
+grep -q 'only two custom agent TOML files' "$repo_dir/README.md" || fail 'README does not explain built-in versus custom roles'
+grep -q 'Codex already provides' "$repo_dir/README.md" || fail 'README does not separate native runtime from kit policy'
+grep -q 'Ultra passes through' "$repo_dir/README.md" || fail 'README does not explain the Ultra pass-through decision'
+grep -q 'Every non-Ultra Sol/Astra effort' "$repo_dir/README.md" || fail 'README does not explain non-Ultra routing scope'
+grep -q '可以增加自己的 Agent 吗' "$repo_dir/README.zh-CN.md" || fail 'Chinese README lacks custom-agent guidance'
+if grep -q 'max_concurrent_threads_per_session' "$repo_dir/presets/sol-astra/config.toml"; then
+  fail 'sol-astra config applies a global thread cap to Ultra'
+fi
+grep -q "Ultra keeps the native runtime's thread selection" "$repo_dir/presets/sol-astra/AGENTS.md" || fail 'sol-astra preset does not preserve native Ultra thread selection'
+
+python3 - "$repo_dir" <<'PY'
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(sys.argv[1])
+missing = []
+for source in root.rglob("*.md"):
+    for target in re.findall(r"\[[^]]+\]\(([^)]+)\)", source.read_text()):
+        if target.startswith(("http://", "https://", "#")):
+            continue
+        destination = (source.parent / target.split("#", 1)[0]).resolve()
+        if not destination.exists():
+            missing.append(f"{source.relative_to(root)} -> {target}")
+assert not missing, "missing relative Markdown links:\n" + "\n".join(missing)
+PY
+
 clean_project="$temp_root/clean-project"
 mkdir -p "$clean_project"
 
