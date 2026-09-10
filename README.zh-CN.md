@@ -6,6 +6,8 @@
 使用 Codex 原生多 Agent 运行能力，再补上一套适合真实开发工作的委派、模型路由、
 独立审查、测试和结果验收规则。
 
+![Codex Subagent Kit 工作方式：你选择的主 Agent 保持不变，Codex 运行原生多 Agent，Kit 为四个分工明确的角色补充路由、约束、审查、测试和验收规则。](docs/assets/codex-subagent-kit-overview.png)
+
 > 这是社区独立项目，不是 OpenAI 官方仓库。
 
 [English](README.md)

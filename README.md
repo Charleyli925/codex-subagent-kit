@@ -7,6 +7,8 @@ A practical operating system for Codex subagents: keep Codex's native
 multi-agent runtime, then add predictable delegation, model routing, review,
 testing, and result acceptance for real development work.
 
+![Codex Subagent Kit overview: your root agent stays unchanged, Codex runs the native multi-agent runtime, and the kit adds routing, guardrails, review, testing, and acceptance across four focused roles.](docs/assets/codex-subagent-kit-overview.png)
+
 > Independent community project. It is not an official OpenAI repository.
 
 [中文说明](README.zh-CN.md)
