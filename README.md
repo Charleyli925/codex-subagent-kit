@@ -36,8 +36,8 @@ while this kit adds only the missing `reviewer` and `tester` specializations.
 For example, a feature task can send codebase discovery to `explorer`, keep the
 critical implementation on the root, run a long deterministic suite through
 `tester`, and ask `reviewer` to inspect the final diff with a fresh context. The
-root remains responsible for authorization and decides whether the evidence is
-good enough to finish.
+root remains responsible for authorization and acceptance. These roles are options,
+not a mandatory pipeline; small changes can stay with the root.
 
 ## It uses Codex's native multi-agent runtime
 
@@ -84,6 +84,32 @@ Codex defaults:
 These defaults are all editable. They are a worked example of separating a
 role's responsibility from the model used to perform it.
 
+## How Luna workers get useful work
+
+Sol and Astra share the same coordination rules. In the `sol-astra` preset,
+the root settles key decisions before handing implementation to Luna Max:
+intended behavior, relevant code, interfaces to preserve, allowed scope and
+acceptance scenarios. It resolves critical ambiguity without prescribing every
+line or doing the implementation first.
+
+Each worker request includes a short execution agreement. The worker reads the
+implementation and relevant callers/types/tests, handles local details and
+necessary test additions, and self-checks its change without a plan-approval
+round trip. Ordinary type/helper differences are local decisions; new facts that
+invalidate assumptions, change agreed behavior/interfaces or require broader
+authority go back to the root with evidence. Safe unaffected work may continue.
+
+Complex multi-file work can fit this handoff. Luna does not take every
+implementation: the root retains or takes back work that still needs continuous
+design or costs more to hand off than to do directly. No dynamic Worker upgrade
+or extra role is involved.
+
+Tester runs specified checks on frozen source; reviewer independently checks
+correctness, not just adherence to the plan. The root reuses evidence while its
+source, configuration, environment and coverage remain applicable, and repeats
+affected checks when they change or a failure or new concern warrants it.
+Authorized implementation continues through acceptance, not merely a first draft.
+
 ## What we learned from native/Ultra behavior
 
 The policy adopts the useful visible principles of the native workflow without
@@ -96,7 +122,7 @@ depending on hidden Ultra configuration:
 - steer or stop work that becomes stale, duplicated, or out of scope;
 - return distilled evidence, then let the root verify it.
 
-The kit adds deterministic safeguards that a runtime cannot infer for every
+The kit adds explicit coordination rules that a runtime cannot infer for every
 repository: source identity, file ownership, dependency state, required reading,
 stop conditions, model-route evidence, and explicit result acceptance.
 
@@ -112,8 +138,8 @@ analysis, issue triage, independent review, and summarization. Short edits,
 irreversible actions, critical-path decisions, and work that needs continuous
 shared judgment stay on the root.
 
-Before the first substantial spawn, the root loads the detailed orchestration
-contract on demand. This is progressive disclosure: every task sees the short
+At the selected preset's delegation entry point, the root loads the detailed
+orchestration contract on demand. This is progressive disclosure: every task sees the short
 policy, but only actual multi-agent work pays the context cost of the full rules.
 
 ## Requirements
@@ -137,7 +163,8 @@ cd codex-subagent-kit
 The installer never overwrites an existing `AGENTS.md`, `.codex/config.toml`,
 `reviewer.toml`, or `tester.toml`. When one already exists, it installs a
 reviewable source copy under `.codex/subagent-kit/` and prints the manual merge
-step.
+step. Existing payload files are preserved too; repeat installation does not
+refresh old rules. See [Updating an existing project](#updating-an-existing-project).
 
 Start a new Codex session from the project root after installation. Codex loads
 project-scoped agents when the session starts.
@@ -183,15 +210,34 @@ The `.codex/subagent-kit/` directory contains the selected preset and the
 progressively disclosed operating contracts. It is also the source used for
 manual merging when a project already owns one of the active files.
 
+## Updating an existing project
+
+Review the current kit source against your installed files, preserving local
+customizations. Rerunning the installer fills missing files; it does not update
+different active files **or an old payload**. A preserved payload is not proof
+that an upgrade was installed.
+
+| Current kit source | Review and merge into the project |
+| --- | --- |
+| `presets/<selected>/AGENTS.md` | `AGENTS.md` and `.codex/subagent-kit/AGENTS.snippet.md` |
+| `presets/<selected>/config.toml` | `.codex/config.toml` and `.codex/subagent-kit/config.toml` |
+| `core/agents/*.toml` | `.codex/agents/` and `.codex/subagent-kit/agents/` |
+| `rules/*.md` | `.codex/subagent-kit/` |
+
+Review the changes together so entry points, task packets and role instructions
+agree. Run `doctor.sh` and start a new Codex session from the project root;
+already-running sessions do not automatically reload their context.
+
 ## Why progressive disclosure
 
 The root `AGENTS.md` stays short. It tells the root agent when delegation is
-appropriate and points to `.codex/subagent-kit/orchestration.md` before the first
-subagent spawn in a substantial task. Each child receives only a self-contained
+appropriate and points to `.codex/subagent-kit/orchestration.md` before delegation
+under that preset; Sol/Astra Ultra keeps its native exception. Each child receives only a self-contained
 task packet plus its task-specific `required_reading` list.
 
-This keeps exploration logs, test output, and detailed coordination rules out of
-the main context until they are needed.
+Task reading is scoped and unchanged material can be reused. This controls
+explicit reading and handoffs, not Codex's automatically injected instructions
+or runtime context inheritance.
 
 ## Sol/Astra routing
 
@@ -272,8 +318,10 @@ bash tests/test-kit.sh
 ```
 
 The checks parse every TOML file, exercise clean and preconfigured project
-installation, verify dry-run behavior, and reject undocumented
-`multi_agent_v2` dependencies.
+installation for all presets, verify dry-run and update-preservation behavior,
+and check installed references and model-neutral roles. These static checks and
+scenario walkthroughs are not live multi-agent tests or guarantees of Luna's
+implementation quality.
 
 ## Compatibility
 
@@ -284,6 +332,10 @@ It uses `[agents]`, `.codex/agents/*.toml`, `model`,
 `model_reasoning_effort`, and `sandbox_mode`. It intentionally does not require
 `[features].multi_agent_v2`. Custom-agent authoring and sharing may evolve, so
 runtime compatibility is tracked in [docs/compatibility.md](docs/compatibility.md).
+Our shared prompt cleanup also draws on the official
+[skills and prompts guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).
+The kit's Luna routing and handoff policy are project choices, not official
+quality guarantees or Astra-specific instructions.
 
 ## Project adapters
 

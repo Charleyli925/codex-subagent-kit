@@ -1,80 +1,48 @@
 # Orchestration contract
 
-Read this document before the first subagent spawn in a substantial task. The
-root agent owns this contract; children receive only the parts relevant to their
-bounded assignment.
+The root reads this contract at the selected preset's delegation entry point.
+Children receive only the constraints and sources needed for their assignment.
 
-## Decide whether to delegate
+## Complete the authorized task
 
-Delegate when all of these are true:
+For implementation requests, continue through agreed acceptance, including
+in-scope repairs and necessary retests. Plans, first drafts and child results
+are intermediate work. Ask only for new authority, material requirement choices
+or unresolved blockers. Consultation and planning requests retain their scope.
+A child report calls for root judgment, not automatic user approval.
 
-1. The task is concrete and bounded.
-2. It can run independently from the root's current critical path.
-3. Parallel execution is likely to save meaningful time or improve quality.
-4. Inputs, permissions, source identity, acceptance criteria, and stop conditions
-   can be written down.
+Delegate under the preset's trigger when bounded independent work materially
+helps time or quality. No fixed explorer → worker → tester → reviewer pipeline
+is required. Keep short, tightly coupled work or assignments whose handoff and
+supervision cost approaches direct implementation on the root.
 
-Prefer exploration, codebase mapping, test execution, log analysis, issue triage,
-independent review, and summarization. Keep short operations, tightly coupled
-design decisions, irreversible actions, and work that continuously depends on
-the root's judgment on the root thread.
+## Coordinate and hand off
 
-Subagents consume additional tokens and coordination time. More agents are not
-automatically better.
+Respect the preset's thread cap. One agent writes a checkout at a time,
+including the root and test artifacts; read-only work uses frozen source.
+Leaf agents do not delegate. Assign resource ownership when relevant.
 
-## Plan dependency waves
+For dependent or parallel work, track task ID, depends_on, source, ownership and
+status. Start ready work only; verified completion unlocks dependencies, while
+failed, cancelled or unverified work results do not. Replan circular dependencies.
+Otherwise skip the dependency table. Continue useful independent work; wait only
+for an actual dependency. Stay responsive to the user.
 
-Maintain a compact task table with:
+Build each request from [task-packet.md](task-packet.md), including the Worker
+agreement when assigning the built-in worker. Send applicable user permissions
+and constraints explicitly. Delegation never grants additional authority.
+Read task-specific sources fully enough to understand the change; reuse unchanged
+material already read and expand when source or assumptions change. A bounded
+handoff does not remove runtime-inherited or automatically injected context.
 
-- task ID;
-- role;
-- `depends_on` task IDs;
-- source identity;
-- file or resource ownership;
-- `blocked | ready | active | completed | failed | cancelled` status.
+## Record routing and accept results
 
-Start only `ready` tasks. A result unlocks dependent work only after the root
-verifies its evidence and marks it `completed`. Failed, cancelled, stale, or
-unverified work does not unlock dependencies. Break circular dependencies into a
-new sequence instead of forcing them to run.
+The root associates task ID, role, expected model/effort and explicit/inherited
+mode with client/session metadata when visible. Children must not guess or prove
+their model. Record hidden routing as unverified, not as a mismatch or proof;
+it does not invalidate independently verified work.
 
-## Control concurrency
-
-- Respect the selected preset's thread cap.
-- Only one agent may write a checkout at a time, including generated test files.
-- Read-only agents may inspect the same frozen source or diff in parallel.
-- Assign explicit ownership of files, ports, build directories, and app instances.
-- Leaf agents do not spawn children.
-
-## Route models explicitly when required
-
-Before spawning, record the role, expected model, expected reasoning effort, and
-whether each value is explicit or inherited. Do not ask a child to prove its own
-route. When the client exposes thread or session metadata, the root may verify the
-actual model and effort there.
-
-If an explicit route is unavailable or mismatched, do not accept child code
-changes. Record the original failure and retry once only when the preset allows a
-documented fallback. A hidden route is `unverified`, not proven and not
-automatically mismatched.
-
-## Send a self-contained task packet
-
-Use `task-packet.md`. Do not send complete conversation history when a bounded
-packet is enough. Every fresh-context child receives task-specific
-`required_reading`; the child reports missing or conflicting sources instead of
-guessing.
-
-Repeat applicable user constraints and authorization boundaries. Delegation does
-not authorize commits, pushes, pull-request changes, merges, installs, releases,
-messages, purchases, or destructive actions unless the user already placed that
-action in scope.
-
-## Stay responsive
-
-The root continues useful non-overlapping work while children run. Wait only
-when a child result is a real dependency. Keep the user informed during longer
-work, and avoid flooding them with unchanged agent status.
-
-Use `lifecycle.md` to steer, stop, cancel, and close work. Use
-`result-contract.md` before accepting any result.
+A route mismatch, or an unavailable explicit route, blocks acceptance of child code changes.
+Record the failure and retry once only under the preset's existing fallback.
+Use [lifecycle.md](lifecycle.md) for correction or takeover and
+[result-contract.md](result-contract.md) before accepting results.

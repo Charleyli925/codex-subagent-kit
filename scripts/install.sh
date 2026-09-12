@@ -83,7 +83,7 @@ copy_if_safe() {
   fi
 }
 
-# Always install a reviewable payload under the kit-owned directory.
+# Fill missing payload files; preserve different existing payloads as well.
 copy_if_safe "$repo_dir/presets/$preset/config.toml" "$payload/config.toml" ".codex/subagent-kit/config.toml"
 copy_if_safe "$repo_dir/presets/$preset/AGENTS.md" "$payload/AGENTS.snippet.md" ".codex/subagent-kit/AGENTS.snippet.md"
 copy_if_safe "$repo_dir/core/agents/reviewer.toml" "$payload/agents/reviewer.toml" ".codex/subagent-kit/agents/reviewer.toml"
@@ -101,11 +101,12 @@ copy_if_safe "$repo_dir/presets/$preset/AGENTS.md" "$project/AGENTS.md" "AGENTS.
 
 printf '\nActivation notes:\n'
 if [ -e "$project/AGENTS.md" ] && ! cmp -s "$repo_dir/presets/$preset/AGENTS.md" "$project/AGENTS.md"; then
-  printf -- '- AGENTS.md already exists. Review .codex/subagent-kit/AGENTS.snippet.md and merge the applicable section manually.\n'
+  printf -- '- AGENTS.md already exists. Review %s/presets/%s/AGENTS.md and merge the applicable section manually.\n' "$repo_dir" "$preset"
 fi
 if [ -e "$project/.codex/config.toml" ] && ! cmp -s "$repo_dir/presets/$preset/config.toml" "$project/.codex/config.toml"; then
-  printf -- '- .codex/config.toml already exists. Merge the [agents] fields from .codex/subagent-kit/config.toml manually.\n'
+  printf -- '- .codex/config.toml already exists. Review %s/presets/%s/config.toml and merge applicable [agents] fields manually.\n' "$repo_dir" "$preset"
 fi
+printf -- '- Existing payload files are also preserved. For updates, review current preset, rules and core/agents sources; see README.md#updating-an-existing-project.\n'
 if [ "$apply" = "true" ]; then
   printf -- '- Start a new Codex session from the project root after activation.\n'
   printf -- '- Run: %s/scripts/doctor.sh --project %s\n' "$repo_dir" "$project"

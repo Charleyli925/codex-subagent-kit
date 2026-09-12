@@ -36,7 +36,8 @@ Codex 负责运行这些线程，本项目负责规定它们如何协作。
 
 例如，一项功能开发可以把代码路径探索交给 `explorer`，主 Agent 保留关键实现，
 耗时测试交给 `tester`，最终 diff 再交给拥有全新上下文的 `reviewer`。子 Agent
-返回的摘要只是证据线索，是否完成仍由主 Agent 核验和决定。
+返回的摘要只是证据线索，是否完成仍由主 Agent 核验和决定。这些角色按需选择，
+不是固定流水线；小修改可以直接由主 Agent 完成。
 
 ## 我们没有重新造一套 Subagent
 
@@ -118,6 +119,24 @@ Reviewer 负责发现高风险错误、回归、竞态和测试缺口。如果�
 `reviewer` 描述的是职责，不等于某个固定模型。模型路由由 preset 和每次 spawn
 共同决定。因此你可以不修改 Reviewer 的工作定义，只替换整个项目的模型策略；
 也可以增加新角色而不复制一套以模型命名的 Agent。
+
+## 怎样让 Luna Worker 接得住实现？
+
+Sol 和 Astra 共用协作规则。在 `sol-astra` 下，主 Agent 先明确关键方案、最终行为、
+相关代码、必须保持的接口、修改范围与验收场景，再交给 Luna Max。
+规划消除影响正确性的关键歧义即可，不逐行规定，也不先把实现做完。
+
+每次发给 Worker 的消息都会附上简短执行约定：读懂实现及必要调用方、类型与测试，
+在范围内自行组织函数、适配类型、补充必要测试并自检，不先复述计划等待批准。
+普通局部差异自己处理；新事实推翻关键假设、改变约定行为/公共接口或需要扩大权限时，
+才暂停受影响部分并给主 Agent 具体证据，仍可继续明确安全的其他部分。
+
+方案清楚的多文件功能可以交给 Luna。Luna 并不承接所有实现：仍需持续设计判断，
+或交接监督不划算的工作由主 Agent 保留或接回，不新增升级角色或动态模型路由。
+
+Tester 在冻结源码上跑指定验证；Reviewer 独立检查代码是否正确，不只看是否照计划做。
+源码、配置、环境和验证范围仍适用时，主 Agent 复用证据；相关变化、失败或新疑点才
+重验受影响部分。已授权实现持续推进到验收，第一版代码和子 Agent 返回不是结束点。
 
 ## 我们从原生/Ultra 行为里学了什么
 
@@ -262,17 +281,30 @@ cd codex-subagent-kit
 - `.codex/agents/reviewer.toml`
 - `.codex/agents/tester.toml`
 
-如果目标文件已经存在，安装器会把待审阅版本放到 `.codex/subagent-kit/`，并提示
-需要人工合并的位置。
+首次遇到已有配置时，安装器会在 `.codex/subagent-kit/` 放置可审阅副本；
+但这个目录内已有的不同内容也不会被覆盖。重复安装只补缺失文件，不代表已经升级。
+
+### 已安装项目如何更新？
+
+从当前 Kit 源码审阅并合并，保留项目自己的改动，不以旧 payload 当作新版：
+
+| 当前 Kit 源码 | 项目中需要审阅合并的位置 |
+| --- | --- |
+| `presets/<所选预设>/AGENTS.md` | 根 `AGENTS.md` 和 `.codex/subagent-kit/AGENTS.snippet.md` |
+| `presets/<所选预设>/config.toml` | `.codex/config.toml` 和 `.codex/subagent-kit/config.toml` |
+| `core/agents/*.toml` | `.codex/agents/` 和 `.codex/subagent-kit/agents/` |
+| `rules/*.md` | `.codex/subagent-kit/` |
+
+成组检查入口、任务包和角色规则是否一致，再运行 `doctor.sh`，从项目根目录开启新会话。
+已运行会话不会因为文件修改自动重新加载上下文。
 
 ## 为什么要渐进式披露？
 
-根目录 `AGENTS.md` 只保留短规则。只有大型任务第一次实际委派前，主 Agent 才
-读取 `.codex/subagent-kit/orchestration.md`。每个子 Agent 只收到自包含任务包和
-本次任务需要的 `required_reading`，不会反复读取整个项目规范。
+根目录 `AGENTS.md` 只保留短入口。按所选 preset 的委派条件读取
+`.codex/subagent-kit/orchestration.md`，Sol/Astra Ultra 保持例外。每个子 Agent
+收到任务包和本次相关的 `required_reading`，已读且未变化的资料可以复用。
 
-这样既能保证下沉规则真的按需被读取，又不会让每个模型、每次任务都承担完整文档
-的上下文成本。
+这控制的是显式阅读与交接；不意味着消除了 Codex 自动注入的指令或运行时继承上下文。
 
 ## 验证
 
@@ -280,11 +312,14 @@ cd codex-subagent-kit
 bash tests/test-kit.sh
 ```
 
-测试会解析全部 TOML、验证 dry-run、测试干净项目和已有配置项目的安装，并确保
-公共核心不依赖 `multi_agent_v2`。
+测试会解析 TOML，覆盖三套 preset 的安装、dry-run、旧配置和旧 payload 保留、
+安装引用及角色模型解耦。静态检查和场景走查不等于真实多 Agent 运行测试，
+也不保证 Luna 的实现质量。
 
 本项目遵循当前 [OpenAI 官方 Subagent 文档](https://learn.chatgpt.com/zh-Hans/docs/agent-configuration/subagents)。
-详细兼容性边界见 [docs/compatibility.md](docs/compatibility.md)。
+详细兼容性边界见 [docs/compatibility.md](docs/compatibility.md)。共用规则清理也参考
+[官方提示词建议](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)，
+但 Luna 路由和交接约定是项目选择，不是官方质量保证，也不新增 Astra 专用分支。
 
 ## 许可证
 
