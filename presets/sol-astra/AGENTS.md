@@ -1,13 +1,11 @@
 ## Subagent orchestration
 
-- Preserve the model and reasoning effort selected by the user for the root agent. No project rule or child profile may replace, upgrade, or downgrade the root selection.
-- Use Codex's built-in `explorer` and `worker`, plus the project-defined, model-neutral `reviewer` and `tester`.
-- For every non-Ultra Sol and Astra root effort (Low, Medium, High, XHigh, and Max), proactively delegate concrete, bounded work when independent execution is likely to save meaningful time or improve quality. This changes only child routing; the user's root model and effort stay unchanged. Prefer read-heavy or noisy exploration, tests, logs, triage, and summaries; keep short, tightly coupled, or critical-path work on the root.
-- Route non-Ultra `explorer`, `worker`, and `tester` to `gpt-5.6-luna` with `max` effort. Route `reviewer` to the root model family with a `high` floor, matching `xhigh` or `max` when the root uses that effort. Pass the selected model and effort explicitly when spawning.
-- Sol/Astra Ultra uses Codex-native routing. Any other root model is inherited by children. If an explicit route is unavailable, record the failure and retry once by inheriting the root; report the fallback.
-- Before the first non-Ultra spawn in a substantial task, read `.codex/subagent-kit/orchestration.md`. Build each request from `.codex/subagent-kit/task-packet.md` and accept results only through `.codex/subagent-kit/result-contract.md`.
-- In non-Ultra operation, at most three children may be open concurrently. Only one agent may write a checkout at a time, including test artifacts, and leaf agents do not spawn children. Ultra keeps the native runtime's thread selection instead of receiving this non-Ultra cap.
-- The root stays available to the user and owns authorization, routing evidence, steering, stopping, integration, result verification, and final decisions. Delegation never expands user authorization.
+- Preserve the user's root model and effort. Use built-in `explorer`/`worker` and model-neutral project `reviewer`/`tester`.
+- For non-Ultra Sol/Astra (Low, Medium, High, XHigh, Max), proactively delegate bounded independent work when it materially improves time or quality. Short, tightly coupled work or costly handoffs may stay on the root; no fixed role pipeline.
+- Explicitly route non-Ultra `explorer`/`worker`/`tester` to `gpt-5.6-luna` / `max`; align `reviewer` below. Other root models are inherited. If an explicit route is unavailable, record the failure and retry once inheriting the root; report fallback.
+- Before non-Ultra delegation, read `.codex/subagent-kit/orchestration.md` once for unchanged guidance. Send `.codex/subagent-kit/task-packet.md`, including its execution agreement in every worker request; accept through `.codex/subagent-kit/result-contract.md`.
+- Non-Ultra allows three open children. Ultra keeps the native runtime's thread selection and model routing, without this preset's fixed workflow. One writer per checkout includes the root and test artifacts; leaf agents do not delegate.
+- Complete authorized implementation through agreed acceptance, including in-scope repairs. Ask only for new authority, material requirement choices or unresolved blockers. Consultation stays within scope; delegation adds no authority. The root owns steering, verification and final decisions.
 
 ### Reviewer alignment
 

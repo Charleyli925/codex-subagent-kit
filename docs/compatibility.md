@@ -1,6 +1,6 @@
 # Compatibility
 
-Last reviewed: 2026-09-11.
+Last reviewed: 2026-09-12.
 
 ## Public configuration surface
 
@@ -30,7 +30,11 @@ internal or legacy flags, but the portable contract does not rely on them.
 Static validation cannot prove which model a hosted or local child actually
 used. When client or session metadata is available, the parent should compare it
 with the expected route. When it is not visible, report `unverified` rather than
-claiming the route was proven.
+claiming the route was proven. Configuration checks and scenario walkthroughs
+do not establish model quality or prove a live handoff. Explicit task packets
+control what the parent sends, not runtime-inherited or automatically injected
+context. The built-in worker receives its agreement in the request, without a
+custom worker profile.
 
 Custom-agent authoring and sharing may evolve. Recheck the official documentation
 after upgrading Codex, and keep compatibility claims tied to a review date.

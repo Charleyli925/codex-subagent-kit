@@ -1,16 +1,18 @@
 # Example project guidance
 
-Follow the installed Subagent Kit rules. Before the first substantial spawn,
-read `.codex/subagent-kit/orchestration.md`.
+Follow the selected preset's delegation trigger and read gates, including its
+Ultra exception; this adapter adds no mandatory role pipeline.
 
 ## Project adapter
 
-- Before implementation, read `docs/architecture.md` and only the component
-  contract relevant to the requested change.
-- The tester runs the project's existing test command against frozen source; it
-  does not modify tests or dependencies.
-- The reviewer receives the acceptance goal, actual diff, relevant source, and
-  `docs/architecture.md` through `required_reading`.
-- Implementation may create a tested branch. Commit, push, pull-request, merge,
-  install, and release permissions remain separate user decisions unless this
-  project's own policy says otherwise.
+- Read the relevant implementation, callers and tests. Use `docs/architecture.md`
+  sections for module-boundary or public-interface changes, and the affected
+  component contract when applicable; a documentation typo needs neither.
+- Give children task-specific `required_reading`; reuse unchanged material already
+  read. Send the Worker execution agreement in the assignment itself.
+- The tester runs specified existing tests on frozen source; the reviewer checks
+  the actual diff and relevant code. The root reuses applicable evidence and
+  requests affected checks for changes or unresolved risks.
+- Finish implementation and in-scope repairs through agreed acceptance. Commit,
+  push, PR, merge, install and release follow this project's authorization;
+  delegation does not grant extra permissions.

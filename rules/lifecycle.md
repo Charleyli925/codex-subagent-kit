@@ -1,31 +1,27 @@
 # Subagent lifecycle
 
-## Steer
+## Correct or take over
 
-Send one focused correction when a critical input changes, the child drifts out
-of scope, duplicates another task, uses stale source, violates ownership, or
-cannot return the agreed evidence. State the changed fact and the desired next
-action; do not resend the entire task packet unless it is no longer valid.
+For planning or key-assumption errors, the root revises the plan within existing
+authorization. For local implementation errors, send concrete evidence to the
+original worker. Ordinary compile errors or local differences need no user approval.
 
-## Stop or cancel
+Steer when inputs change, work drifts, duplicates effort, uses stale source or
+cannot supply agreed evidence. Repeated misunderstanding of a constraint, no valid
+progress after one focused correction, or renewed continuous design calls for
+root takeover; do not resend the whole history.
 
-Mark work `cancelled` when it is obsolete or replaced. Mark it `failed` when it
-targets the wrong source, needs unauthorized action, conflicts with another
-writer, violates a stop condition, or still makes no valid progress after one
-focused correction.
+## Stop and transfer ownership
 
-Preserve useful read-only evidence, stop owned processes, and release file,
-resource, and port ownership. Never kill unrelated processes.
+Cancel obsolete/replaced work; fail wrong-source, unauthorized, conflicting or
+unsuccessfully corrected work. Preserve useful evidence and the first test failure.
+Before any repair or takeover, stop or finish the affected worker/tester and owned
+processes, confirm write ownership is released, then edit. Never modify frozen
+source while testing runs or stop unrelated processes.
 
-## Complete
+## Complete and close
 
-A child may recommend `completed`, but only the root can accept completion after
-applying the result contract. A completed thread does not itself prove that its
-changes were integrated or that the parent task is finished.
-
-## Close
-
-Let the runtime release completed threads normally. If a completed thread still
-occupies capacity, use only controls exposed by the current client. If the client
-does not expose closing or releasing, report that limitation instead of
-inventing an operation or exceeding the thread cap.
+A child recommends completion; the root applies [result-contract.md](result-contract.md).
+Let the runtime release completed threads. If capacity stays occupied, use only
+the current client's exposed close/release controls; report missing capabilities
+rather than inventing operations or exceeding the cap.
